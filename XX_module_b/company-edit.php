@@ -1,0 +1,155 @@
+<?php
+include("db.php");
+session_start();
+
+if (!isset($_SESSION['admin'])) {
+    http_response_code(404);
+    echo "404 Forbidden - Admins only";
+    exit();
+}
+
+$id = $_GET['id'] ?? null;
+
+if (!$id) {
+    die("Invalid company.");
+}
+
+$stmt = $pdo->prepare("
+    SELECT * 
+    FROM companies 
+    WHERE id = :id
+");
+$stmt->execute(["id" => $id]);
+
+$company = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$company) {
+    die("Company not found.");
+}
+
+if (isset($_POST['update'])) {
+
+    $sql = "
+        UPDATE companies SET
+            company_name        = :company_name,
+            company_address     = :company_address,
+            company_telephone   = :company_telephone,
+            company_email       = :company_email,
+
+            owner_name          = :owner_name,
+            owner_mobile        = :owner_mobile,
+            owner_email         = :owner_email,
+
+            contact_name        = :contact_name,
+            contact_mobile      = :contact_mobile,
+            contact_email       = :contact_email,
+
+            is_deactivated      = :is_deactivated,
+            updated_at          = NOW()
+        WHERE id = :id
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute([
+        "company_name"        => $_POST['company_name'] ?? '',
+        "company_address"     => $_POST['company_address'] ?? '',
+        "company_telephone"   => $_POST['company_telephone'] ?? '',
+        "company_email"       => $_POST['company_email'] ?? '',
+
+        "owner_name"          => $_POST['owner_name'] ?? '',
+        "owner_mobile"        => $_POST['owner_mobile'] ?? '',
+        "owner_email"         => $_POST['owner_email'] ?? '',
+
+        "contact_name"        => $_POST['contact_name'] ?? '',
+        "contact_mobile"      => $_POST['contact_mobile'] ?? '',
+        "contact_email"       => $_POST['contact_email'] ?? '',
+
+        "is_deactivated"      => isset($_POST['is_deactivated']) ? 1 : 0,
+        "id"                  => $id
+    ]);
+
+    header("Location: companies.php");
+    exit;
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Company</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+    <a class="back" href="companies.php">← Back to Companies</a>
+
+    <h2>Edit Company</h2>
+
+    <form method="POST">
+
+        <label>Company Name</label>
+        <input type="text" name="company_name"
+            value="<?= htmlspecialchars($company['company_name']) ?>" required>
+
+        <label>Address</label>
+        <input type="text" name="company_address"
+            value="<?= htmlspecialchars($company['company_address']) ?>">
+
+        <label>Telephone</label>
+        <input type="text" name="company_telephone"
+            value="<?= htmlspecialchars($company['company_telephone']) ?>">
+
+        <label>Company Email</label>
+        <input type="email" name="company_email"
+            value="<?= htmlspecialchars($company['company_email']) ?>">
+
+        <h3>Owner Information</h3>
+
+        <label>Owner Name</label>
+        <input type="text" name="owner_name"
+            value="<?= htmlspecialchars($company['owner_name']) ?>">
+
+        <label>Owner Mobile</label>
+        <input type="text" name="owner_mobile"
+            value="<?= htmlspecialchars($company['owner_mobile']) ?>">
+
+        <label>Owner Email</label>
+        <input type="email" name="owner_email"
+            value="<?= htmlspecialchars($company['owner_email']) ?>">
+
+        <h3>Contact Person</h3>
+
+        <label>Contact Name</label>
+        <input type="text" name="contact_name"
+            value="<?= htmlspecialchars($company['contact_name']) ?>">
+
+        <label>Contact Mobile</label>
+        <input type="text" name="contact_mobile"
+            value="<?= htmlspecialchars($company['contact_mobile']) ?>">
+
+        <label>Contact Email</label>
+        <input type="email" name="contact_email"
+            value="<?= htmlspecialchars($company['contact_email']) ?>">
+
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="is_deactivated"
+                    <?= !empty($company['is_deactivated']) ? 'checked' : '' ?>>
+                Deactivate Company
+            </label>
+        </div>
+
+        <br>
+
+        <button type="submit" name="update">Update Company</button>
+
+    </form>
+
+</div>
+
+</body>
+</html>
